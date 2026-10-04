@@ -78,3 +78,30 @@ export function layoutTree(nodes, origin = { x: 0, y: 0 }) {
   for (const node of roots) { place(node, 0, top); top += sizes.get(node.id) + 28; }
   return positions;
 }
+
+// Return a selection containing the entire branch, including its native labels/edges.
+export function expandMindMapDeletion(elements, selected) {
+  const live = elements.filter(e => !e.isDeleted);
+  const nodes = live.filter(e => e.customData?.unfoldMindMap?.kind === 'node');
+  const removed = new Set(nodes.filter(e => selected[e.id] || live.some(label => selected[label.id] && label.containerId === e.id)).map(e => e.id));
+  if (!removed.size) return selected;
+  const byId = new Map(nodes.map(e => [e.id, e]));
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const node of nodes) {
+      const meta = node.customData.unfoldMindMap;
+      const parent = byId.get(meta.parentId);
+      if (!removed.has(node.id) && removed.has(meta.parentId) && parent?.customData.unfoldMindMap.mapId === meta.mapId) {
+        removed.add(node.id); changed = true;
+      }
+    }
+  }
+  const result = {...selected};
+  for (const e of live) {
+    const meta = e.customData?.unfoldMindMap;
+    const child = meta?.kind === 'edge' && byId.get(meta.parentId);
+    if (removed.has(e.id) || removed.has(e.containerId) || (child && removed.has(child.id) && child.customData.unfoldMindMap.mapId === meta.mapId)) result[e.id] = true;
+  }
+  return result;
+}

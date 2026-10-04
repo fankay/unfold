@@ -48,3 +48,30 @@ test('删除上级后的分支仍能整理，循环引用不会死循环', () =>
   assert.equal(layoutTree([node]).size, 1);
   assert.throws(() => layoutTree([{...node,parentId:'b'}]), /循环/);
 });
+
+test('删除父主题包含后代、绑定文字和连线，保留兄弟与其他画布对象', async () => {
+  const {expandMindMapDeletion} = await import('../src/mindmap.mjs');
+  const node = (id, parentId, mapId='map') => ({id,customData:{unfoldMindMap:{kind:'node',mapId,parentId}}});
+  const edge = (id, parentId) => ({id,customData:{unfoldMindMap:{kind:'edge',mapId:'map',parentId}}});
+  const scene = [node('root',null),node('a','root'),node('b','a'),node('c','b'),node('sibling','root'),node('other','a','another-map'),{id:'text',containerId:'b'},edge('a-edge','a'),edge('b-edge','b'),edge('c-edge','c'),edge('sibling-edge','sibling'),{id:'plain'}];
+  const selected = {a:true,plain:true};
+  assert.deepEqual(Object.keys(expandMindMapDeletion(scene,selected)).sort(), ['a','a-edge','b','b-edge','c','c-edge','plain','text'].sort());
+  assert.deepEqual(selected,{a:true,plain:true});
+  assert.ok(expandMindMapDeletion(scene,{root:true})['sibling-edge']);
+  assert.ok(expandMindMapDeletion(scene,{text:true}).c);
+  assert.deepEqual(expandMindMapDeletion(scene,{plain:true}),{plain:true});
+});
+test('删除分支跳过已删除主题并处理循环层级', async () => {
+  const {expandMindMapDeletion} = await import('../src/mindmap.mjs');
+  const scene = [{id:'a',customData:{unfoldMindMap:{kind:'node',mapId:'m',parentId:'b'}}},{id:'b',customData:{unfoldMindMap:{kind:'node',mapId:'m',parentId:'a'}}},{id:'old',isDeleted:true,customData:{unfoldMindMap:{kind:'node',mapId:'m',parentId:'a'}}}];
+  assert.deepEqual(expandMindMapDeletion(scene,{a:true}),{a:true,b:true});
+});
+test('开发与生产的原生删除入口都扩展分支，并在上游改变时明确失败', async () => {
+  const {readFileSync} = await import('node:fs');
+  const {patchMindMapDeletion} = await import('../scripts/excalidraw-mindmap-plugin.mjs');
+  for (const mode of ['dev','prod']) {
+    const source = readFileSync(`node_modules/@excalidraw/excalidraw/dist/${mode}/index.js`,'utf8');
+    assert.match(patchMindMapDeletion(source), /selectedElementIds:\(function expandMindMapDeletion/);
+  }
+  assert.throws(()=>patchMindMapDeletion('changed upstream'),/删除适配器/);
+});
