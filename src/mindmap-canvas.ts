@@ -1,6 +1,6 @@
 import { convertToExcalidrawElements, newElementWith } from '@excalidraw/excalidraw';
 import type { ExcalidrawElement, FontFamilyValues } from '@excalidraw/excalidraw/element/types';
-import { layoutTree, parseOutline } from './mindmap.mjs';
+import { insertTopicAfter, layoutTree, parseOutline } from './mindmap.mjs';
 
 type Element = ExcalidrawElement;
 type Meta = { mapId: string; parentId: string | null; kind: 'node' | 'edge' };
@@ -12,7 +12,9 @@ export function mindMapMeta(element: Element): Meta | undefined {
 export function selectedMindMapNode(elements: readonly Element[], selected: string[]) {
   const ids = new Set(selected);
   const nodes = elements.filter(e => !e.isDeleted && mindMapMeta(e)?.kind === 'node' && (ids.has(e.id) || elements.some(label => !label.isDeleted && 'containerId' in label && label.containerId === e.id && ids.has(label.id))));
-  return nodes.length === 1 ? nodes[0] : undefined;
+  if (nodes.length !== 1) return undefined;
+  const node = nodes[0];
+  return elements.some(e => !e.isDeleted && ids.has(e.id) && e.id !== node.id && !('containerId' in e && e.containerId === node.id)) ? undefined : node;
 }
 function nodeElements(id: string, text: string, mapId: string, parentId: string | null, color: string) {
   return convertToExcalidrawElements([{
@@ -92,5 +94,24 @@ export function addMindMapNode(scene: readonly Element[], selected: Element, sib
   if (scene.filter(e => !e.isDeleted && mindMapMeta(e)?.mapId === meta.mapId && mindMapMeta(e)?.kind === 'node').length >= 100) throw new Error('每张思维导图最多支持 100 个主题');
   const id = crypto.randomUUID();
   const elements = nodeElements(id, '新主题', meta.mapId, parentId, selected.strokeColor);
-  return {elements: arrangeMindMap([...scene, ...elements], meta.mapId), nodeId: id};
+  const updated = sibling ? insertTopicAfter(scene, selected.id, elements) : [...scene, ...elements];
+  return {elements: arrangeMindMap(updated, meta.mapId), nodeId: id};
+}
+
+export function renameMindMapNode(scene: readonly Element[], nodeId: string, value: string) {
+  const node = scene.find(e => !e.isDeleted && e.id === nodeId && mindMapMeta(e)?.kind === 'node');
+  const label = scene.find(e => !e.isDeleted && e.type === 'text' && e.containerId === nodeId);
+  if (!node || label?.type !== 'text') return [...scene];
+  const text = value.trim() || (mindMapMeta(node)?.parentId ? '新主题' : '中心主题');
+  if (text === label.originalText) return [...scene];
+  const width = Math.min(360, Math.max(mindMapMeta(node)?.parentId ? 150 : 180, ...text.split('\n').map(line => [...line].reduce((n, ch) => n + (ch.charCodeAt(0) > 255 ? label.fontSize : label.fontSize * .6), 40))));
+  const generated = convertToExcalidrawElements([{
+    ...node, type: 'rectangle', width, height: mindMapMeta(node)?.parentId ? 56 : 68,
+    boundElements: null, label: {text, fontFamily: label.fontFamily, fontSize: label.fontSize, textAlign: label.textAlign, verticalAlign: label.verticalAlign, strokeColor: label.strokeColor},
+  }], {regenerateIds: false});
+  const shape = generated.find(e => e.id === node.id)!;
+  const measured = generated.find(e => e.type === 'text');
+  if (measured?.type !== 'text') return [...scene];
+  const updated = scene.map(e => e.id === nodeId ? newElementWith(node, {width: shape.width, height: shape.height}) : e.id === label.id ? newElementWith(label, {text: measured.text, originalText: text, width: measured.width, height: measured.height}) : e);
+  return arrangeMindMap(updated, mindMapMeta(node)!.mapId);
 }

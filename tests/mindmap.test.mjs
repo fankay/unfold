@@ -1,6 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseOutline, layoutTree } from '../src/mindmap.mjs';
+import { insertTopicAfter, mindMapKeyAction, parseOutline, layoutTree } from '../src/mindmap.mjs';
+
+test('节点快捷键区分同级、子级和编辑结束', () => {
+  assert.equal(mindMapKeyAction({key:'Enter'}, {hasParent:true}), 'sibling');
+  assert.equal(mindMapKeyAction({key:'Enter'}), 'child');
+  assert.equal(mindMapKeyAction({key:'Tab'}, {editing:true}), 'child');
+  assert.equal(mindMapKeyAction({key:'F2'}), 'edit');
+  assert.equal(mindMapKeyAction({key:'Enter',metaKey:true}, {editing:true}), 'finish');
+  assert.equal(mindMapKeyAction({key:'Escape'}, {editing:true}), 'finish');
+});
+test('输入法确认、换行、按键重复和系统快捷键不会创建节点', () => {
+  for (const event of [{key:'Enter',isComposing:true},{key:'Enter',keyCode:229},{key:'Enter',repeat:true},{key:'Enter',shiftKey:true},{key:'Tab',shiftKey:true},{key:'Enter',ctrlKey:true},{key:'Enter',altKey:true}]) assert.equal(mindMapKeyAction(event, {hasParent:true}), null);
+  assert.equal(mindMapKeyAction({key:'Enter',isComposing:true}, {editing:true,hasParent:true}), null);
+  assert.equal(mindMapKeyAction({key:'Enter',shiftKey:true}, {editing:true}), null);
+});
+test('新同级插在当前主题之后，保留其他元素与主题的顺序', () => {
+  const scene = [{id:'a'}, {id:'a-text'}, {id:'a-child'}, {id:'b'}];
+  const added = [{id:'new'}, {id:'new-text'}];
+  assert.deepEqual(insertTopicAfter(scene,'a',added).map(e=>e.id), ['a','new','new-text','a-text','a-child','b']);
+  assert.deepEqual(scene.map(e=>e.id), ['a','a-text','a-child','b']);
+  assert.throws(()=>insertTopicAfter(scene,'missing',added));
+});
 
 test('缩进大纲保留分支层级、中文与兄弟顺序', () => {
   let n = 0;

@@ -1,4 +1,21 @@
 // Tree data lives on ordinary canvas elements; there is no separate document store.
+export function mindMapKeyAction(event, {editing = false, hasParent = false} = {}) {
+  if (event.isComposing || event.keyCode === 229 || event.repeat || event.altKey) return null;
+  if (editing && event.key === 'Escape') return 'finish';
+  if (editing && event.key === 'Enter' && (event.metaKey || event.ctrlKey)) return 'finish';
+  if (event.ctrlKey || event.metaKey || event.shiftKey) return null;
+  if (event.key === 'Enter') return hasParent ? 'sibling' : 'child';
+  if (event.key === 'Tab') return 'child';
+  if (!editing && event.key === 'F2') return 'edit';
+  return null;
+}
+
+export function insertTopicAfter(scene, anchorId, additions) {
+  const index = scene.findIndex(element => element.id === anchorId);
+  if (index < 0) throw new Error('主题已不存在');
+  return [...scene.slice(0, index + 1), ...additions, ...scene.slice(index + 1)];
+}
+
 export function parseOutline(outline, id = () => crypto.randomUUID()) {
   const rows = outline.split(/\r?\n/).filter(row => row.trim());
   if (!rows.length) throw new Error('请先输入中心主题');
