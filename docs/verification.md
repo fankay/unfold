@@ -105,3 +105,9 @@ Excalidraw 已更新到 0.18.1，并执行兼容范围内的 npm audit fix。依
 - 390×844 窄屏验证：入口完整可点击，创建窗口在屏幕内，页面无横向溢出。测试后恢复浏览器尺寸。
 - 新增 4 项测试覆盖缩进解析、无效输入限制、不同尺寸树布局、删除上级与循环引用防护。完整测试共 14 项通过，正式构建通过。
 - 已更新 Cloudflare Pages 生产分支 main，本次部署 https://abd1a43b.unfold-canvas.pages.dev/。线上实测创建「项目规划」导图，主题层级和中文文字正常，添加子主题按钮可用，错误日志为空。截图：mindmap-preview.png。
+
+## GitHub main 自动部署
+
+- 远程仓库为 github.com/fankay/unfold，默认分支 main。已提交并推送思维导图版本 33a917e，避免自动构建回退到首次提交。
+- 通过现有 Cloudflare Pages 项目的「Git 存储库 → 连接」成功绑定仓库，保留 unfold-canvas 项目及现有域名。控制台确认 main 自动生产部署已启用。
+- 构建命令 npm test && npm run build，输出 dist，仓库根目录，构建系统版本 3，Node.js 由已提交的 .node-version 指定为 22。关闭其他分支的自动预览部署，无新增 API 令牌或 GitHub Actions 密钥。

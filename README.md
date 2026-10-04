@@ -28,9 +28,17 @@ npm run dev
 
 这是纯静态项目，不使用 Workers Functions、D1、R2、账号或收费 API。
 
-正式网站：[https://unfold-canvas.pages.dev/](https://unfold-canvas.pages.dev/)。项目名 `unfold-canvas`，生产分支 `main`，使用 Direct Upload 发布静态构建。
+正式网站：[https://unfold-canvas.pages.dev/](https://unfold-canvas.pages.dev/)。项目名 `unfold-canvas`，已连接 GitHub 仓库 [fankay/unfold](https://github.com/fankay/unfold)。向 `main` 推送提交后，Cloudflare Pages 自动安装依赖、执行测试和构建，然后更新现有网站及自定义域名。
 
-后续更新（需安装 Wrangler 并登录部署账户）：
+Cloudflare 构建配置：生产分支 `main`，自动生产部署已启用，构建命令 `npm test && npm run build`，输出目录 `dist`，根目录为仓库根目录，构建系统版本 3。`.node-version` 固定 Node.js 22。其他分支的自动预览部署已关闭。无需 GitHub Actions 或额外部署密钥。
+
+常规更新：
+
+```sh
+git push origin main
+```
+
+也可手动更新（需安装 Wrangler 并登录部署账户）：
 
 ```sh
 wrangler login
@@ -43,7 +51,7 @@ npm run deploy
 
 浏览器数据按站点隔离：localhost 的画布不会自动出现在正式域名。需要从本地导出 JSON，再在正式网站导入。项目仍仅保存在各自浏览器中，不上传画布内容到 Cloudflare。
 
-参考：[Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/)、[免费计划限制](https://developers.cloudflare.com/pages/platform/limits/)。当前项目采用 Direct Upload；未来要使用 Git 自动部署，需要新建 Git 集成项目。
+参考：[Git 集成](https://developers.cloudflare.com/pages/configuration/git-integration/)、[免费计划限制](https://developers.cloudflare.com/pages/platform/limits/)。项目最初使用 Direct Upload，现已通过控制台的「Git 存储库 → 连接」接入 GitHub，保留原项目和域名。
 
 ## 检查
 
