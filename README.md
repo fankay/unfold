@@ -68,3 +68,11 @@ npm run preview
 来源与许可：[Noto Sans SC](https://fontsource.org/fonts/noto-sans-sc/about)、[Noto Serif SC](https://fontsource.org/fonts/noto-serif-sc/about)、[Ma Shan Zheng](https://github.com/googlefonts/mashanzheng)、[ZCOOL KuaiLe](https://github.com/googlefonts/zcool-kuaile)。每个字体目录附带 OFL 许可证。
 
 当前 Excalidraw 没有公开字体注册接口，`scripts/excalidraw-font-plugin.mjs` 使用固定版本 0.18.1 的原生注册表，并在开发/生产构建中检查适配器。不改写依赖源码。升级 Excalidraw 时需要一起验证该适配器。字体 ID 10–13 是保存格式的一部分，请勿更换对应关系。
+
+## 思维导图
+
+点击画布顶部「思维导图 → 新建思维导图」，输入大纲并创建。第一行为中心主题，后续每行用两个空格或 Tab 缩进表示子主题，支持最多 100 个主题、8 层初始分支。创建会追加到现有画布右侧，不覆盖已有内容，并自动显示新导图。
+
+生成的是可编辑的原生图形、绑定文字和连线。双击主题修改文字；选中一个主题后，在「思维导图」菜单中添加子主题、添加同级主题或整理布局。中心主题只能添加子主题。添加后选中新主题，支持原生撤销。连线绑定到主题，拖动时跟随；整理布局按当前尺寸排列，保留字体、样式和动画引用。
+
+层级信息随图形的 customData 存入 IndexedDB 和项目 JSON，刷新、导入后可继续添加分支。主题和连线可使用现有「出现 / 消失」功能，需要一起演示时一起选中添加动画。删除上级主题不会自动删除其后代，剩余分支仍可编辑和整理。当前使用向右展开的树布局，完全在浏览器内生成，无需 AI API 或服务器。

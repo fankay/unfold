@@ -6,6 +6,7 @@ import type { AnimationStart, Camera as CameraState, Project } from './model';
 import { newStep } from './model';
 import AnimationControls, { type Effect } from './AnimationControls';
 import AnimationBadges from './AnimationBadges';
+import MindMapTools from './MindMapTools';
 import { expandObjects } from './animation-objects';
 import { cameraAt, visibilityAt, playbackGroups, createTimeline, sampleTimeline } from './playback.mjs';
 import { reconcileSteps } from './reconcile-steps.mjs';
@@ -185,7 +186,7 @@ export default function App({ initial }: { initial: Project }) {
     <input ref={fileInput} type="file" accept=".json,application/json" hidden onChange={e=>{const file=e.target.files?.[0];if(file)void importProject(file);e.target.value='';}}/>
     <main><div className="canvas" ref={setCanvas}>
       <Excalidraw excalidrawAPI={setApi} initialData={initialData} langCode="zh-CN" theme="light" viewModeEnabled={playing} zenModeEnabled={playing} UIOptions={options} onChange={onCanvasChange}/>
-      {!playing && <><AnimationControls canvas={canvas} project={project} selected={selected} target={target} setTarget={setTarget} add={addObjects} open={listOpen} setOpen={setListOpen} select={selectObjects} remove={removeAnimation} move={move} changeStep={changeAnimationStep} changeStart={changeStart}/><AnimationBadges project={project} selectStep={(step,objects)=>{setTarget(step);setListOpen(true);selectObjects(objects);}}/></>}
+      {!playing && <><AnimationControls canvas={canvas} project={project} selected={selected} target={target} setTarget={setTarget} add={addObjects} open={listOpen} setOpen={setListOpen} select={selectObjects} remove={removeAnimation} move={move} changeStep={changeAnimationStep} changeStart={changeStart} extraTools={<MindMapTools api={api} project={project} selected={selected} notify={setNotice} onOpen={()=>setListOpen(false)}/>}/><AnimationBadges project={project} selectStep={(step,objects)=>{setTarget(step);setListOpen(true);selectObjects(objects);}}/></>}
       {playing&&<><div className="presentation-click-surface" aria-hidden="true"/><div className="presentation-label"><span>{active<0?'单击开始':`第 ${active+1} 步 / ${project.steps.length}`}</span></div></>}
       <nav className={`canvas-controls ${playing?'playback-controls':'shortcut-hint'}`} aria-label={playing?'演示控制':'演示快捷键'}>{playing?<><button aria-label="上一步" disabled={activeGroup.current<0} onClick={previous}><ChevronLeft size={18}/></button><span>{active+1} / {project.steps.length}</span><button onClick={next}>{active===project.steps.length-1?'结束演示':active<0?'开始':'下一步'}{active===project.steps.length-1?<X size={18}/>:<ChevronRight size={18}/>}</button><button aria-label="全屏" title="全屏" onClick={()=>{void document.documentElement.requestFullscreen().catch(()=>setNotice('浏览器未允许全屏'));}}><Maximize size={16}/></button></>:<span><kbd>空格</kbd> 下一步 <span className="dot">·</span> <kbd>←</kbd> 上一步 <span className="dot">·</span> <kbd>Esc</kbd> 退出演示</span>}</nav>
     </div>
