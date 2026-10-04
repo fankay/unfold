@@ -24,6 +24,7 @@ export default function MindMapTools({api, canvas, toolbarSlot, canvasMode, proj
   const node = selectedMindMapNode(project.elements, selected);
   const camera = project.camera || {scrollX: 0, scrollY: 0, zoom: 1};
   const editingNode = project.elements.find(e => !e.isDeleted && e.id === draft?.id);
+  const activeNode = editingNode || node;
   const editingLabel = project.elements.find(e => !e.isDeleted && e.type === 'text' && e.containerId === draft?.id);
   function beginEdit(id: string) {
     const label = api?.getSceneElements().find(e => e.type === 'text' && e.containerId === id);
@@ -54,7 +55,10 @@ export default function MindMapTools({api, canvas, toolbarSlot, canvasMode, proj
       else keepVisible(topic);
     }
   }
-  useEffect(() => {if (draft?.id) {editor.current?.focus(); editor.current?.select();}}, [draft?.id]);
+  // The scene update can render after the draft: focus only once its textarea exists.
+  useEffect(() => {
+    if (draft?.id && editingNode?.id) {editor.current?.focus(); editor.current?.select();}
+  }, [draft?.id, editingNode?.id]);
   useEffect(() => {
     if (!canvas) return;
     const down = (event: PointerEvent) => {if (event.target instanceof HTMLCanvasElement) setInteracting(true);};
@@ -131,11 +135,12 @@ export default function MindMapTools({api, canvas, toolbarSlot, canvasMode, proj
     } catch (e) {notify(e instanceof Error ? e.message : '整理失败');}
   }
   const canvasControls = canvas && createPortal(<div className="mindmap-canvas-controls" aria-label="画布思维导图工具">
-      {node && !draft && !interacting && !canvasMode.editing && canvasMode.selection && (() => {
+      {activeNode && !interacting && !canvasMode.editing && canvasMode.selection && (() => {
+        const node = activeNode;
         const [left, top, right, bottom] = getCommonBounds([node]);
         const centerY = ((top + bottom) / 2 + camera.scrollY) * camera.zoom;
-        return <><button className="mindmap-add child" aria-label="添加子主题" title="添加子主题 · Tab" style={{left: (right + camera.scrollX) * camera.zoom + 10, top: centerY - 16}} onPointerDown={e => {e.preventDefault(); e.stopPropagation();}} onClick={e => {e.stopPropagation(); add(false);}}><Plus size={17}/></button>
-          {mindMapMeta(node)?.parentId && <button className="mindmap-add sibling" aria-label="添加同级主题" title="添加同级主题 · Enter" style={{left: ((left + right) / 2 + camera.scrollX) * camera.zoom - 16, top: (bottom + camera.scrollY) * camera.zoom + 10}} onPointerDown={e => {e.preventDefault(); e.stopPropagation();}} onClick={e => {e.stopPropagation(); add(true);}}><Plus size={16}/></button>}
+        return <><button className="mindmap-add child" aria-label="添加子主题" title="添加子主题 · Tab" style={{left: (right + camera.scrollX) * camera.zoom + 10, top: centerY - 16}} onPointerDown={e => {e.preventDefault(); e.stopPropagation();}} onClick={e => {e.stopPropagation(); if (draftRef.current) finishEdit('child'); else add(false);}}><Plus size={17}/></button>
+          {mindMapMeta(node)?.parentId && <button className="mindmap-add sibling" aria-label="添加同级主题" title="添加同级主题 · Enter" style={{left: ((left + right) / 2 + camera.scrollX) * camera.zoom - 16, top: (bottom + camera.scrollY) * camera.zoom + 10}} onPointerDown={e => {e.preventDefault(); e.stopPropagation();}} onClick={e => {e.stopPropagation(); if (draftRef.current) finishEdit('sibling'); else add(true);}}><Plus size={16}/></button>}
           <div className="mindmap-node-hint" style={{left: (left + camera.scrollX) * camera.zoom, top: (bottom + camera.scrollY) * camera.zoom + (mindMapMeta(node)?.parentId ? 49 : 12)}}>{mindMapMeta(node)?.parentId ? 'Tab 子主题 · Enter 同级 · F2 编辑' : 'Tab / Enter 子主题 · F2 编辑'}</div>
         </>;
       })()}
