@@ -1,0 +1,11 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import { loadProject } from './storage';
+import { seed } from './seed';
+import '@excalidraw/excalidraw/index.css';
+import './style.css';
+import { registerChineseFonts } from 'virtual:unfold-fonts';
+(window as unknown as Window & { EXCALIDRAW_ASSET_PATH: string }).EXCALIDRAW_ASSET_PATH = '/';
+registerChineseFonts();
+loadProject().catch(() => undefined).then(project => createRoot(document.getElementById('root')!).render(<React.StrictMode><App initial={project || seed()} /></React.StrictMode>));
